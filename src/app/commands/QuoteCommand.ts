@@ -1,46 +1,41 @@
-import { client } from "../../server";
-import { company } from "../../config/integrantes.json";
-
-interface ICompany {
-  id: { participant: any };
-  getChat: () => any;
-  getContact: () => any;
-  reply: (arg0: string) => void;
-}
+import { client } from '../../services/whatsapp';
+import { company } from '../../config/integrantes.json';
+import type { Message, GroupChat } from 'whatsapp-web.js';
 
 export default class QuoteCommand {
-  async execute(msg: ICompany) {
-    const chat = await msg.getChat();
+  async execute(msg: Message) {
+    const chat: GroupChat = (await msg.getChat()) as any;
     const user = await msg.getContact();
-    const contato = user.id.user;
 
-    chat.sendStateTyping();
+    const { user: contato } = user.id;
+
+    await chat.sendStateTyping();
 
     if (!chat.isGroup) {
-      return msg.reply("Comando apenas para grupos!");
+      return msg.reply('Comando apenas para grupos!');
     }
 
-    company.map(async (valores) => {
-      if (valores.numero == contato) {
-        if (!valores.admin) {
+    company.map(async ({ numero, admin }) => {
+      if (numero == contato) {
+        if (!admin) {
           return msg.reply(
-            "Ops, você não tem permissão para executar este comando!"
+            'Ops, você não tem permissão para executar este comando!',
           );
         }
 
-        let text = "";
-        let mentions = [];
+        let text = '';
+        const mentions = [];
 
-        for (let participant of chat.participants) {
+        for (const participant of chat.participants) {
           const contact = await client.getContactById(
-            participant.id._serialized
+            participant.id._serialized,
           );
 
           mentions.push(contact);
           text += `@${participant.id.user} `;
         }
 
-        chat.sendMessage(text, { mentions });
+        return chat.sendMessage(text, { mentions });
       }
     });
   }

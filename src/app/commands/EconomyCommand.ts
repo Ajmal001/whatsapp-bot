@@ -1,42 +1,25 @@
-import axios from "axios";
-
-interface IEconomia {
-  getChat: () => any;
-  reply: (args: string) => void;
-}
-
-interface currency {
-  code: string;
-  codein: string;
-  name: string;
-  high: string;
-  low: string;
-  varBid: string;
-  pctChange: string;
-  bid: string;
-  ask: string;
-  timestamp: string;
-  create_date: string;
-}
+import axios from 'axios';
+import type { ICurrency } from '../interfaces/Currency';
+import type { Message } from 'whatsapp-web.js';
 
 export default class EconomyCommand {
-  async execute(msg: IEconomia) {
+  async execute(msg: Message) {
     const chat = await msg.getChat();
 
-    chat.sendStateTyping();
+    await chat.sendStateTyping();
 
     const { data } = await axios.get(
-      "https://economia.awesomeapi.com.br/all/USD-BRL,BTC-BRL,EUR-BRL"
+      'https://economia.awesomeapi.com.br/all/USD-BRL,BTC-BRL,EUR-BRL',
     );
 
-    const type = (currency: currency) => {
+    const type = (currency: ICurrency) => {
       return `\n💲 *${currency.name} (${currency.code})* \nValor atual: R$ ${currency.bid} \nValor mais alto: R$ ${currency.high} \nValor mais baixo: R$ ${currency.low}\n`;
     };
 
-    msg.reply(
+    return msg.reply(
       `Cotação atual: 💎💰🤑💹 \n${type(data.USD)} ${type(data.EUR)} ${type(
-        data.BTC
-      )}`
+        data.BTC,
+      )}`,
     );
   }
 }
